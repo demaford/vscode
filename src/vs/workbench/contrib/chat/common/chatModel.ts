@@ -999,12 +999,17 @@ export class ChatModel extends Disposable implements IChatModel {
 	) {
 		super();
 
-		this._isImported = (!!initialData && !isSerializableSessionData(initialData)) || (initialData?.isImported ?? false);
-		this._sessionId = (isSerializableSessionData(initialData) && initialData.sessionId) || generateUuid();
+		const isValid = isSerializableSessionData(initialData);
+		if (initialData && !isValid) {
+			this.logService.warn(`ChatModel#constructor: Loaded malformed session data: ${JSON.stringify(initialData)}`);
+		}
+
+		this._isImported = (!!initialData && !isValid) || (initialData?.isImported ?? false);
+		this._sessionId = (isValid && initialData.sessionId) || generateUuid();
 		this._requests = initialData ? this._deserialize(initialData) : [];
-		this._creationDate = (isSerializableSessionData(initialData) && initialData.creationDate) || Date.now();
-		this._lastMessageDate = (isSerializableSessionData(initialData) && initialData.lastMessageDate) || this._creationDate;
-		this._customTitle = isSerializableSessionData(initialData) ? initialData.customTitle : undefined;
+		this._creationDate = (isValid && initialData.creationDate) || Date.now();
+		this._lastMessageDate = (isValid && initialData.lastMessageDate) || this._creationDate;
+		this._customTitle = isValid ? initialData.customTitle : undefined;
 
 		this._initialRequesterAvatarIconUri = initialData?.requesterAvatarIconUri && URI.revive(initialData.requesterAvatarIconUri);
 		this._initialResponderAvatarIconUri = isUriComponents(initialData?.responderAvatarIconUri) ? URI.revive(initialData.responderAvatarIconUri) : initialData?.responderAvatarIconUri;
@@ -1152,7 +1157,7 @@ export class ChatModel extends Disposable implements IChatModel {
 
 	addRequest(message: IParsedChatRequest, variableData: IChatRequestVariableData, attempt: number, chatAgent?: IChatAgentData, slashCommand?: IChatAgentCommand, confirmation?: string, locationData?: IChatLocationData, attachments?: IChatRequestVariableEntry[], workingSet?: URI[], isCompleteAddedRequest?: boolean): ChatRequestModel {
 		const request = new ChatRequestModel(this, message, variableData, Date.now(), attempt, confirmation, locationData, attachments, workingSet, isCompleteAddedRequest);
-		request.response = new ChatResponseModel([], this, chatAgent, slashCommand, request.id, undefined, undefined, undefined, undefined, undefined, undefined, undefined, isCompleteAddedRequest);
+		request.response = new ChatResponseModel([], this, chatAgent, slashCommand, request.id, undefined, undefined, undefined, undefined, undefined, undefined, isCompleteAddedRequest);
 
 		this._requests.push(request);
 		this._lastMessageDate = Date.now();
