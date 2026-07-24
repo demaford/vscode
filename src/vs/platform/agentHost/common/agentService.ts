@@ -803,6 +803,7 @@ export interface IAgentDescriptor {
 	readonly capabilities?: IAgentCapabilities;
 }
 
+
 // ---- Auth types (RFC 9728 / RFC 6750 inspired) -----------------------------
 
 /**
